@@ -35,16 +35,15 @@ fastlane/test_output
 timeline.xctimeline
 playground.xcworkspace
 
-# Assets
-*.colorset
-*.imageset
-
 # macOS
 .DS_Store
 
 # Misc
 *.swp
 *.lock
+*.Rhistory
+maincode.md
+Other.md
 
 # Secret files
 .env

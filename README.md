@@ -1,34 +1,40 @@
-# FirstAI Game
+# FirstAI Game - 1A2B Code Breaker
 
-A small SwiftUI project: "First AI Game" — a number code breaker with multiple modes (Basic, Hard, Time Attack).
+A stylish, neon-themed **1A2B (Bulls and Cows)** code-breaking game built with **SwiftUI** for iOS.
 
-How to open
+## Features
 
-- Open `FirstAIGame.xcodeproj` in Xcode 15+.
+- **Multiple Game Modes**:
+    - **BASIC**: Classic 4-digit decoding with no limits.
+    - **HARD**: Extreme 5-digit decoding challenge.
+    - **TIME ATTACK**: Fast-paced 120s challenge with time rewards that decrease as you progress through levels.
+- **Modern UI/UX**:
+    - Immersive deep neon theme.
+    - Interactive numeric keypad with duplicate prevention.
+    - Smooth scroll animations for history tracking (iOS 17+ focus effects).
+    - Particle explosion effects on successful decryption.
+- **Dynamic Audio**:
+    - Different background music for each game mode.
+    - Seamless track transitions with fade effects.
+    - Haptic feedback for a tactile experience.
+- **Records**:
+    - Persistent "Hall of Fame" to track your best attempts and highest Time Attack scores.
 
-Quick steps to initialize git and push to GitHub (the assistant can run these if you want):
+## Requirements
 
-1. Initialize a local repo and commit:
+- **iOS 17.0+**
+- **Xcode 15.0+**
+- **Swift 5.9+**
 
-```bash
-cd /path/to/FirstAIGame
-git init
-git add .
-git commit -m "Initial commit: FirstAI Game"
-```
+## Getting Started
 
-2. Create GitHub repository and push (using gh CLI):
+1. Clone this repository:
+   ```bash
+   git clone https://github.com/yourusername/FirstAIGame.git
+   ```
+2. Open `FirstAIGame.xcodeproj` in Xcode.
+3. Build and run on your iPhone or Simulator.
 
-```bash
-gh repo create FirstAIGame --public --source=. --remote=origin --push
-```
+## License
 
-Or manually create a remote and push:
-
-```bash
-git remote add origin https://github.com/<your-username>/FirstAIGame.git
-git branch -M main
-git push -u origin main
-```
-
-If you want me to run the git commands and attempt to create the GitHub repo, say so and I'll run them now.
+This project is for educational purposes as an AI-assisted development showcase.
