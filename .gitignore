@@ -1,0 +1,63 @@
+# Xcode
+# https://github.com/github/gitignore/blob/main/Swift.gitignore
+
+# User settings
+xcuserdata/
+
+# build
+build/
+DerivedData/
+*.xcbuilddata
+
+# Archives
+*.xcarchive
+
+# Xcode automatic workspace
+*.xcworkspace
+
+# Swift Package Manager
+/.build/
+/Package.resolved
+
+# CocoaPods
+Pods/
+
+# Carthage
+Carthage/Build/
+
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+
+# Playgrounds
+timeline.xctimeline
+playground.xcworkspace
+
+# Assets
+*.colorset
+*.imageset
+
+# macOS
+.DS_Store
+
+# Misc
+*.swp
+*.lock
+
+# Secret files
+.env
+
+# Certificates
+*.cer
+*.p12
+
+# SwiftPM
+.swiftpm
+
+# JetBrains
+.idea/
+
+# VSCode
+.vscode/

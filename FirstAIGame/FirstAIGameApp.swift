@@ -2,7 +2,7 @@
 //  FirstAIGameApp.swift
 //  FirstAIGame
 //
-//  Created by Kimi on 2026/3/3.
+//  Created by Kimi on 2026/03/03.
 //
 
 import SwiftUI

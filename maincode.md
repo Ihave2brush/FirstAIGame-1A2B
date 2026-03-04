@@ -1,3 +1,66 @@
+# FirstAIGame 專案開發紀錄與原始碼彙整
+
+本文件紀錄了 **FirstAIGame** (1A2B Code Breaker) 專案的開發歷程、實作步驟以及最終的原始碼。
+
+## 1. 開發歷程與實作步驟
+
+### 第一階段：專案建立與基礎結構
+- **專案初始化**：建立了名為 `FirstAIGame` 的 SwiftUI 專案，設定了標準的 iOS 專案目錄結構。
+- **基礎 UI 實作**：建立初步的 `ContentView.swift`，使用 `VStack` 與 `HStack` 建立基本的計數器原型。
+- **配置清理**：清理了從 Demo 專案複製過來的舊路徑參考，確保 `FirstAIGame` 擁有獨立的開發環境。
+
+### 第二階段：核心遊戲邏輯 (1A2B)
+- **隨機數生成**：實作了不重複隨機 4 位數生成算法。
+- **A/B 判斷邏輯**：撰寫了精確的 `A`（位置與數字皆對）與 `B`（數字對但位置錯）計算機制。
+- **黑客解碼主題 UI**：
+    - 採用深色霓虹主題 (`#0D0D1A`)。
+    - 實作自定義數位鍵盤，具備「已輸入數字禁用」功能防止重複輸入。
+    - 建立 4 個發光的數位輸入框。
+
+### 第三階段：動態效果與使用者體驗優化
+- **時鐘 App 風格紀錄列表**：
+    - 利用 iOS 17 的 `.scrollTransition` 實作「中心放大、滑開縮小」的動態焦點效果。
+    - 加入 `.scrollTargetBehavior(.viewAligned)`，實現滑動自動對齊中心的「段落感」。
+- **自動捲動**：確保每次輸入新紀錄後，清單會自動平滑捲動到底部。
+- **計次器功能**：記錄玩家每場遊戲嘗試的次數。
+
+### 第四階段：生涯紀錄與多模式擴展
+- **最佳紀錄儲存 (Best Score)**：使用 `@AppStorage` 實作本地持久化儲存，紀錄 BASIC 模式的最少嘗試次數。
+- **多模式選擇介面**：
+    - **BASIC**：經典 4 位數解碼。
+    - **HARD**：極限 5 位數解碼。
+    - **TIME ATTACK**：限時 120 秒挑戰，每過一關獎勵時間（隨關卡數遞減）。
+- **緊急倒數警告**：當 TIME ATTACK 倒數至最後 10 秒時，觸發全螢幕紅色呼吸燈與計時器抖動特效。
+- **過關動畫**：實作「ACCESS GRANTED」全螢幕成功特效，增強解碼成功的快感。
+- **退出功能**：在所有模式中加入「返回主選單」按鍵，並確保計時器能正確停止。
+
+---
+
+## 2. 原始碼檔案彙整
+
+### FirstAIGameApp.swift
+```swift
+//
+//  FirstAIGameApp.swift
+//  FirstAIGame
+//
+//  Created by Kimi on 2026/03/03.
+//
+
+import SwiftUI
+
+@main
+struct FirstAIGameApp: App {
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+    }
+}
+```
+
+### ContentView.swift
+```swift
 //
 //  ContentView.swift
 //  FirstAIGame
@@ -33,15 +96,6 @@ struct GameRecord: Identifiable {
     let tryIndex: Int
 }
 
-struct Particle: Identifiable {
-    let id = UUID()
-    var x: CGFloat
-    var y: CGFloat
-    var vx: CGFloat
-    var vy: CGFloat
-    var life: Double
-}
-
 // MARK: - Main View
 struct ContentView: View {
     // 遊戲狀態控制
@@ -54,9 +108,6 @@ struct ContentView: View {
     @State private var history: [GameRecord] = []
     @State private var tryCount = 0
     @State private var levelScore = 0
-    
-    // 粒子系統狀態
-    @State private var particles: [Particle] = []
     
     // 動畫狀態
     @State private var showWinEffect = false
@@ -73,49 +124,9 @@ struct ContentView: View {
     @AppStorage("bestTryCount") private var bestTryCount = 0
     @AppStorage("bestTimeAttackScore") private var bestTimeAttackScore = 0
     
-    // 背景動畫狀態
-    @State private var animPos1: CGPoint = CGPoint(x: 100, y: 100)
-    @State private var animPos2: CGPoint = CGPoint(x: 300, y: 500)
-    
     var body: some View {
         ZStack {
             Color(red: 0.05, green: 0.05, blue: 0.1).ignoresSafeArea()
-            
-            // 背景圖片 (僅在遊戲進行中且為 TIME ATTACK 模式時顯示)
-            if gameState == .playing && gameMode == .timeAttack {
-                GeometryReader { geo in
-                    Image("Background")
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: geo.size.width, height: geo.size.height)
-                        .clipped()
-                }
-                .ignoresSafeArea()
-                .opacity(0.15)
-                .blendMode(.screen)
-            }
-            
-            // 霓虹流動背景層
-            ZStack {
-                Circle()
-                    .fill(Color.blue.opacity(0.15))
-                    .frame(width: 400, height: 400)
-                    .blur(radius: 100)
-                    .position(animPos1)
-                
-                Circle()
-                    .fill(Color.purple.opacity(0.15))
-                    .frame(width: 450, height: 450)
-                    .blur(radius: 120)
-                    .position(animPos2)
-            }
-            .ignoresSafeArea()
-            .onAppear {
-                withAnimation(.easeInOut(duration: 8).repeatForever(autoreverses: true)) {
-                    animPos1 = CGPoint(x: 350, y: 700)
-                    animPos2 = CGPoint(x: 50, y: 100)
-                }
-            }
             
             // 緊急倒數紅色閃爍層
             if gameMode == .timeAttack && timeRemaining <= 10 && gameState == .playing {
@@ -139,32 +150,6 @@ struct ContentView: View {
             }
             
             if showWinEffect { successOverlay }
-        }
-        .onAppear {
-            // 初次進入啟動音樂
-            handleMusicChange(state: gameState, mode: gameMode)
-        }
-        .onChange(of: gameState) { _, newValue in
-            handleMusicChange(state: newValue, mode: gameMode)
-        }
-        .onChange(of: gameMode) { _, newValue in
-            handleMusicChange(state: gameState, mode: newValue)
-        }
-    }
-    
-    // 統一音樂管理邏輯 (解決快速切換衝突)
-    private func handleMusicChange(state: GameState, mode: GameMode) {
-        switch state {
-        case .menu:
-            AudioManager.shared.playBGM(named: "Background music", volume: 0.3)
-        case .playing:
-            if mode == .timeAttack {
-                AudioManager.shared.playBGM(named: "Time Attack music", volume: 0.4)
-            } else {
-                AudioManager.shared.playBGM(named: "Normal", volume: 0.3)
-            }
-        case .gameOver:
-            AudioManager.shared.stopBGM(fadeDuration: 1.0)
         }
     }
     
@@ -236,7 +221,6 @@ struct ContentView: View {
             guessInputView
             historyListView
             
-            // 下一關獎勵提示 (僅在 Time Attack 顯示)
             if gameMode == .timeAttack && !showWinEffect {
                 Text("NEXT REWARD: +\(currentRewardTime)s")
                     .font(.system(size: 10, weight: .bold, design: .monospaced))
@@ -267,42 +251,21 @@ struct ContentView: View {
     
     private var successOverlay: some View {
         ZStack {
-            Color.green.opacity(0.15).ignoresSafeArea()
-            
-            // 粒子噴發背景
-            TimelineView(.animation) { timeline in
-                Canvas { context, size in
-                    for particle in particles {
-                        let rect = CGRect(x: size.width/2 + particle.x, y: size.height/2 + particle.y, width: 4, height: 4)
-                        context.opacity = particle.life
-                        context.fill(Path(rect), with: .color(.green))
-                    }
-                }
-            }
-            .onChange(of: showWinEffect) { _, newValue in
-                if newValue { updateParticles() }
-            }
-            
+            Color.green.opacity(0.25).ignoresSafeArea()
             VStack(spacing: 20) {
                 Image(systemName: "checkmark.shield.fill").font(.system(size: 80)).foregroundColor(.green).shadow(color: .green, radius: 20)
                 Text("ACCESS GRANTED").font(.system(size: 32, weight: .black, design: .monospaced)).foregroundColor(.white).shadow(color: .green, radius: 10)
-                
-                if gameMode == .timeAttack {
-                    Text("REWARD: +\(currentRewardTime)s")
-                        .font(.title2).bold().foregroundColor(.green)
-                }
-                
+                if gameMode == .timeAttack { Text("REWARD: +\(currentRewardTime)s").font(.title2).bold().foregroundColor(.green) }
                 Text("ENCRYPTION BROKEN").font(.caption).tracking(4).foregroundColor(.green.opacity(0.8))
             }
             .scaleEffect(winEffectScale).opacity(winEffectOpacity)
         }
         .onAppear {
-            createExplosion()
             withAnimation(.spring(response: 0.5, dampingFraction: 0.6)) { winEffectScale = 1.0; winEffectOpacity = 1.0 }
         }
     }
     
-    // MARK: - Components (保持不變)
+    // MARK: - Components
     
     private var guessInputView: some View {
         HStack(spacing: 8) {
@@ -352,7 +315,7 @@ struct ContentView: View {
                     ForEach(rows[rowIndex], id: \.self) { num in
                         if num >= 0 {
                             Button(action: { addDigit(num) }) {
-                                Text("\(num)").font(.title3).fontWeight(.bold).frame(width: 80, height: 50).background(currentGuess.contains(num) ? Color.gray.opacity(0.1) : Color.white.opacity(0.25)).foregroundColor(currentGuess.contains(num) ? .gray : .white).cornerRadius(15)
+                                Text("\(num)").font(.title3).fontWeight(.bold).frame(width: 80, height: 50).background(currentGuess.contains(num) ? Color.gray.opacity(0.1) : Color.white.opacity(0.1)).foregroundColor(currentGuess.contains(num) ? .gray : .white).cornerRadius(15)
                             }.disabled(currentGuess.contains(num))
                         } else { actionButton(type: num) }
                     }
@@ -363,7 +326,7 @@ struct ContentView: View {
     
     private func actionButton(type: Int) -> some View {
         Button(action: { if type == -1 { currentGuess.removeAll() } else if !currentGuess.isEmpty { currentGuess.removeLast() } }) {
-            Image(systemName: type == -1 ? "trash" : "delete.left").font(.title3).frame(width: 80, height: 50).background(type == -1 ? Color.red.opacity(0.4) : Color.blue.opacity(0.4)).foregroundColor(type == -1 ? .red : .blue).cornerRadius(15)
+            Image(systemName: type == -1 ? "trash" : "delete.left").font(.title3).frame(width: 80, height: 50).background(type == -1 ? Color.red.opacity(0.2) : Color.blue.opacity(0.2)).foregroundColor(type == -1 ? .red : .blue).cornerRadius(15)
         }
     }
     
@@ -371,35 +334,12 @@ struct ContentView: View {
         VStack(spacing: 30) {
             Image(systemName: "exclamationmark.triangle").font(.system(size: 60)).foregroundColor(.red)
             Text("SYSTEM TERMINATED").font(.system(size: 32, weight: .bold, design: .monospaced)).foregroundColor(.white)
-            
-            VStack(spacing: 15) {
-                VStack(spacing: 5) {
-                    Text("MODE: \(gameMode.rawValue)")
-                    if gameMode == .timeAttack { 
-                        Text("LEVELS CLEARED: \(levelScore)").font(.title2).bold().foregroundColor(.orange) 
-                    } else { 
-                        Text("TOTAL ATTEMPTS: \(tryCount)") 
-                    }
-                }
-                
-                // 顯示正確答案
-                VStack(spacing: 8) {
-                    Text("CORRECT CODE")
-                        .font(.system(size: 10, weight: .bold))
-                        .tracking(2)
-                    Text(targetNumber.map { "\($0)" }.joined())
-                        .font(.system(size: 36, weight: .black, design: .monospaced))
-                        .foregroundColor(.red.opacity(0.8))
-                        .tracking(10)
-                }
-                .padding()
-                .background(RoundedRectangle(cornerRadius: 15).fill(Color.white.opacity(0.05)))
-            }
-            .foregroundColor(.gray)
-            
-            Button(action: { gameState = .menu }) {
-                Text("RETURN TO MAIN MENU").fontWeight(.bold).padding().frame(maxWidth: .infinity).background(Color.blue).foregroundColor(.white).cornerRadius(15)
-            }.padding(.horizontal, 40)
+            VStack(spacing: 10) {
+                Text("MODE: \(gameMode.rawValue)")
+                if gameMode == .timeAttack { Text("LEVELS CLEARED: \(levelScore)").font(.title2).bold().foregroundColor(.orange) }
+                else { Text("TOTAL ATTEMPTS: \(tryCount)") }
+            }.foregroundColor(.gray)
+            Button(action: { gameState = .menu }) { Text("RETURN TO MAIN MENU").fontWeight(.bold).padding().frame(maxWidth: .infinity).background(Color.blue).foregroundColor(.white).cornerRadius(15) }.padding(.horizontal, 40)
         }
     }
     
@@ -417,11 +357,7 @@ struct ContentView: View {
     
     private func startNewGame(mode: GameMode) {
         gameMode = mode; gameState = .playing; levelScore = 0; resetLevel()
-        if mode == .timeAttack { 
-            timeRemaining = 120
-            currentRewardTime = 90 // 重置初始獎勵
-            startTimer()
-        }
+        if mode == .timeAttack { timeRemaining = 120; currentRewardTime = 45; startTimer() }
     }
     
     private func resetLevel() {
@@ -440,8 +376,6 @@ struct ContentView: View {
     
     private func addDigit(_ num: Int) {
         guard currentGuess.count < gameMode.digitCount else { return }
-        AudioManager.shared.playSFX(named: "click")
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
         withAnimation(.spring()) { currentGuess.append(num) }
         if currentGuess.count == gameMode.digitCount { checkGuess() }
     }
@@ -451,55 +385,18 @@ struct ContentView: View {
         for i in 0..<gameMode.digitCount { if currentGuess[i] == targetNumber[i] { a += 1 } else if targetNumber.contains(currentGuess[i]) { b += 1 } }
         history.append(GameRecord(guess: currentGuess.map { "\($0)" }.joined(), aCount: a, bCount: b, tryIndex: tryCount))
         currentGuess = []
-        if a == gameMode.digitCount { 
-            handleWin() 
-        } else {
-            AudioManager.shared.playSFX(named: "wrong")
-            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-        }
-    }
-    
-    private func createExplosion() {
-        particles = (0..<150).map { _ in
-            let angle = Double.random(in: 0...Double.pi * 2)
-            let speed = Double.random(in: 1...12)
-            return Particle(x: 0, y: 0, vx: cos(angle) * speed, vy: sin(angle) * speed, life: 1.0)
-        }
-        updateParticles()
-    }
-    
-    private func updateParticles() {
-        guard showWinEffect else { return }
-        
-        for i in particles.indices {
-            particles[i].x += particles[i].vx
-            particles[i].y += particles[i].vy
-            particles[i].life -= 0.01
-        }
-        particles.removeAll { $0.life <= 0 }
-        
-        if !particles.isEmpty {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.016) { updateParticles() }
-        }
+        if a == gameMode.digitCount { handleWin() }
     }
     
     private func handleWin() {
-        AudioManager.shared.playSFX(named: "success")
-        UINotificationFeedbackGenerator().notificationOccurred(.success)
         withAnimation { showWinEffect = true }
-        
-        // 暫存目前的獎勵時間，用於過關後計算遞減
         let rewarded = currentRewardTime
-        
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
             withAnimation {
-                showWinEffect = false; winEffectScale = 0.5; winEffectOpacity = 0; particles = []
+                showWinEffect = false; winEffectScale = 0.5; winEffectOpacity = 0
                 if gameMode == .timeAttack {
-                    levelScore += 1
-                    timeRemaining += rewarded
-                    // 獎勵時間遞減邏輯：每關減少 5 秒，最低保底 5 秒
-                    currentRewardTime = max(5, currentRewardTime - 5)
-                    resetLevel()
+                    levelScore += 1; timeRemaining += rewarded
+                    currentRewardTime = max(5, currentRewardTime - 5); resetLevel()
                 } else {
                     if gameMode == .basic && (bestTryCount == 0 || tryCount < bestTryCount) { bestTryCount = tryCount }
                     gameState = .menu
@@ -512,3 +409,4 @@ struct ContentView: View {
 }
 
 #Preview { ContentView() }
+```
